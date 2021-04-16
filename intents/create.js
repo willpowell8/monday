@@ -183,7 +183,6 @@ class CreateItemDialog extends ComponentDialog {
             step.values[previousItem.id] = step.result;
           }
         }
-        const monday = mondaySdk();
         var boardId = this.boardId;
         var itemName = step.values["name"]
         var objects = {};
@@ -195,7 +194,6 @@ class CreateItemDialog extends ComponentDialog {
         var stringItem = JSON.stringify(objects);
         stringItem = JSON.stringify(String(stringItem));
         stringItem = stringItem.substring(1, stringItem.length-1);
-        monday.setToken('eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjg5NjYwNDgyLCJ1aWQiOjE2NjY1NzIxLCJpYWQiOiIyMDIwLTExLTAxVDEzOjQzOjAyLjAwMFoiLCJwZXIiOiJtZTp3cml0ZSIsImFjdGlkIjo3MzM2MzM3LCJyZ24iOiJ1c2UxIn0.Snko3tzbKJyYoTPMAwK2mo0zzcgCl0xEXAjJEGcPB6Y');
         var createMethod = `mutation { create_item (board_id: ${this.boardId}, item_name:"${itemName}" column_values:"${stringItem}") {id}}`;
         var result = await monday.api(createMethod);
         console.log("Got Result", result);
