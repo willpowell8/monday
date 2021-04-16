@@ -7,20 +7,6 @@ module.exports = async function(context, next, conversationData){
 
   var result = await monday.api('query { boards { id name } }');
   var selectedBoard = context.activity.text;
-  if(conversationData.intent == "agent.boards.list"){
-
-    var matchBoard = result.data.boards.find(function(board){
-      return board.id == selectedBoard || board.name.toLowerCase() == selectedBoard.toLowerCase();
-    })
-    if(matchBoard == null){
-      await context.sendActivity(MessageFactory.text("Could not find matching board", "Could not find matching board"));
-    }else{
-      conversationData.intent = null;
-      conversationData.board = matchBoard;
-      await context.sendActivity(MessageFactory.text(`Board selected ${matchBoard.name}`, `Board selected ${matchBoard.name}`));
-      return;
-    }
-  }
 
   var matchBoard = result.data.boards.find(function(board){
     return selectedBoard.toLowerCase().indexOf(board.name.toLowerCase())> -1;
@@ -36,6 +22,22 @@ module.exports = async function(context, next, conversationData){
     var item = items[Math.floor(Math.random() * items.length)];
     await context.sendActivity(MessageFactory.text(item, item));
     return;
+  }
+
+
+  if(conversationData.intent == "agent.boards.list"){
+    var matchBoard = result.data.boards.find(function(board){
+      return board.id == selectedBoard || board.name.toLowerCase() == selectedBoard.toLowerCase();
+    })
+    if(matchBoard == null){
+      await context.sendActivity(MessageFactory.text("Could not find matching board", "Could not find matching board"));
+      return;
+    }else{
+      conversationData.intent = null;
+      conversationData.board = matchBoard;
+      await context.sendActivity(MessageFactory.text(`Board selected ${matchBoard.name}`, `Board selected ${matchBoard.name}`));
+      return;
+    }
   }
 
   var items = result.data.boards.map((board) => {
