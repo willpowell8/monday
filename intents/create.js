@@ -260,6 +260,11 @@ class CreateItemDialog extends ComponentDialog {
 }
 
 module.exports = async function(context, next, conversationData, conversationState, userState, dialogState){
+  if(conversationData.board == null){
+    await context.sendActivity(MessageFactory.text("You need to tell me what board you want to work on", "You need to tell me what board you want to work on"));
+    await require('./boards-list')(context, next, conversationData);
+    return;
+  }
   var boardId = conversationData.board.id;
   var result = await monday.api(`query {  boards (ids: ${boardId}) {owner {id} columns { id, title, type, settings_str} } }`);
   var createItem = new CreateItemDialog(userState, result, boardId)

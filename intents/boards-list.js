@@ -28,7 +28,13 @@ module.exports = async function(context, next, conversationData){
   if(matchBoard != null){
     conversationData.intent = null;
     conversationData.board = matchBoard;
-    await context.sendActivity(MessageFactory.text(`Board selected ${matchBoard.name}`, `Board selected ${matchBoard.name}`));
+    var items = [
+      `Great! Let's work with ${matchBoard.name}`,
+      `Just what I was thinking. ${matchBoard.name} it is!`,
+      `Yes of course opened ${matchBoard.name}`
+    ]
+    var item = items[Math.floor(Math.random() * items.length)];
+    await context.sendActivity(MessageFactory.text(item, item));
     return;
   }
 

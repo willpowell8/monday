@@ -46,6 +46,9 @@ class EchoBot extends ActivityHandler {
               case "agent.boards.list":
                 await require('./intents/boards-list')(context, next, conversationData);
               break
+              case "agent.boards.current":
+                await require('./intents/board-current')(context, next, conversationData);
+              break;
               case "agent.assigned.to.me":
 
               break
@@ -68,11 +71,11 @@ class EchoBot extends ActivityHandler {
 
               break;
               default:
-                if(conversationData.board != null){
+                /*if(conversationData.board != null){
                   await context.sendActivity(MessageFactory.text(conversationData.board.name, conversationData.board.name));
                 }
                 this.dialogState = conversationState.createProperty('DialogState');
-                await global.dialog.run(context, this.dialogState);
+                await global.dialog.run(context, this.dialogState);*/
             }
             console.log("Executing next");
             next();

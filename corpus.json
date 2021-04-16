@@ -22,7 +22,21 @@
       "utterances": [
         "what boards do i have?",
         "Change board",
-        "Switch board"
+        "Switch board",
+        "Switch to board",
+        "Open board"
+      ],
+      "answers": [
+        "You have boards"
+      ]
+    },
+    {
+      "intent": "agent.boards.current",
+      "utterances": [
+        "What boards are we in",
+        "Which board are we working in",
+        "Tell me the current board",
+        "What is the current board"
       ],
       "answers": [
         "You have boards"
