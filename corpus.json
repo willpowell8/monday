@@ -6,6 +6,7 @@
       "intent": "agent.create",
       "utterances": [
         "create a new ticket",
+        "create item",
         "create row",
         "add a new line",
         "create new line",
@@ -13,6 +14,18 @@
       ],
       "answers": [
         "Sure thing"
+      ]
+    },
+
+    {
+      "intent": "agent.boards.list",
+      "utterances": [
+        "what boards do i have?",
+        "Change board",
+        "Switch board"
+      ],
+      "answers": [
+        "You have boards"
       ]
     },
 
@@ -27,14 +40,64 @@
     },
 
     {
-      "intent": "agent.boards.list",
+      "intent": "agent.update.item",
       "utterances": [
-        "what boards do i have?",
-        "Change board",
-        "Switch board"
+        "Update item",
+        "Modify item"
       ],
       "answers": [
-        "You have boards"
+        "You have X tickets assigned"
+      ]
+    },
+    {
+      "intent": "agent.update",
+      "utterances": [
+        "Modify item"
+      ],
+      "answers": [
+        "You have X tickets assigned"
+      ]
+    },
+
+    {
+      "intent": "agent.add",
+      "utterances": [
+        "Make that into an item",
+        "Create an item from that",
+        "Actually add that as an item"
+      ],
+      "answers": [
+        "You have X tickets assigned"
+      ]
+    },
+
+    {
+      "intent": "agent.assign.to.me",
+      "utterances": [
+        "Assign that to me"
+      ],
+      "answers": [
+        ""
+      ]
+    },
+
+    {
+      "intent": "agent.addcomment",
+      "utterances": [
+        "Add a comment to item"
+      ],
+      "answers": [
+        ""
+      ]
+    },
+
+    {
+      "intent": "agent.addthatcomment",
+      "utterances": [
+        "Add that as a comment"
+      ],
+      "answers": [
+        ""
       ]
     }
   ]

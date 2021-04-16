@@ -6,8 +6,9 @@ const { ActionTypes } = require('botframework-schema');
 module.exports = async function(context, next, conversationData){
 
   var result = await monday.api('query { boards { id name } }');
+  var selectedBoard = context.activity.text;
   if(conversationData.intent == "agent.boards.list"){
-    var selectedBoard = context.activity.text;
+
     var matchBoard = result.data.boards.find(function(board){
       return board.id == selectedBoard || board.name.toLowerCase() == selectedBoard.toLowerCase();
     })
@@ -20,6 +21,17 @@ module.exports = async function(context, next, conversationData){
       return;
     }
   }
+
+  var matchBoard = result.data.boards.find(function(board){
+    return selectedBoard.toLowerCase().indexOf(board.name.toLowerCase())> -1;
+  })
+  if(matchBoard != null){
+    conversationData.intent = null;
+    conversationData.board = matchBoard;
+    await context.sendActivity(MessageFactory.text(`Board selected ${matchBoard.name}`, `Board selected ${matchBoard.name}`));
+    return;
+  }
+
   var items = result.data.boards.map((board) => {
     return board.name
   });
@@ -36,7 +48,7 @@ module.exports = async function(context, next, conversationData){
       value: board.id
     })
   })
-  var reply = MessageFactory.suggestedActions(actions, `Which board do you want to work with?${boardList}`);
+  var reply = MessageFactory.suggestedActions(actions, `Which board do you want to work with?\r\n${boardList}`);
   await context.sendActivity(reply);
   conversationData.intent = "agent.boards.list";
   //await context.sendActivity(MessageFactory.text(text, text));

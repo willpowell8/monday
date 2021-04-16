@@ -46,6 +46,27 @@ class EchoBot extends ActivityHandler {
               case "agent.boards.list":
                 await require('./intents/boards-list')(context, next, conversationData);
               break
+              case "agent.assigned.to.me":
+
+              break
+              case "agent.update.item":
+
+              break;
+              case "agent.update":
+
+              break;
+              case "agent.add":
+
+              break;
+              case "agent.assign.to.me":
+
+              break;
+              case "agent.addcomment":
+
+              break;
+              case "agent.addthatcomment":
+
+              break;
               default:
                 if(conversationData.board != null){
                   await context.sendActivity(MessageFactory.text(conversationData.board.name, conversationData.board.name));
@@ -60,7 +81,7 @@ class EchoBot extends ActivityHandler {
 
         this.onMembersAdded(async (context, next) => {
             const membersAdded = context.activity.membersAdded;
-            const welcomeText = 'Hello and welcome!';
+            const welcomeText = 'Hi, I am your Monday bot and Im here to help!';
             for (let cnt = 0; cnt < membersAdded.length; ++cnt) {
                 if (membersAdded[cnt].id !== context.activity.recipient.id) {
                     await context.sendActivity(MessageFactory.text(welcomeText, welcomeText));
