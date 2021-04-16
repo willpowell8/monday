@@ -15,7 +15,7 @@
         "Sure thing"
       ]
     },
-    
+
     {
       "intent": "agent.assigned.to.me",
       "utterances": [
@@ -29,7 +29,9 @@
     {
       "intent": "agent.boards.list",
       "utterances": [
-        "what boards do i have?"
+        "what boards do i have?",
+        "Change board",
+        "Switch board"
       ],
       "answers": [
         "You have boards"

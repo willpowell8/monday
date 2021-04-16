@@ -29,9 +29,7 @@ class EchoBot extends ActivityHandler {
         nlpStart();
         // See https://aka.ms/about-bot-activity-message to learn more about the message and other activity types.
         this.onMessage(async (context, next) => {
-            console.log("Message");
             const conversationData = await this.conversationDataAccessor.get(context, { promptedForUserName: false });
-            console.log("Message2");
             const replyText = `OK: ${ context.activity.text }`;
             var intent;
             if(conversationData.intent != null){
@@ -55,6 +53,7 @@ class EchoBot extends ActivityHandler {
                 this.dialogState = conversationState.createProperty('DialogState');
                 await global.dialog.run(context, this.dialogState);
             }
+            console.log("Executing next");
             next();
 
         });

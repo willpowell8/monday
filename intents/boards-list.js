@@ -1,17 +1,15 @@
 const { MessageFactory } = require('botbuilder');
-const mondaySdk = require("monday-sdk-js");
+const monday = require("../monday.js");
 const { ActionTypes } = require('botframework-schema');
+
 
 module.exports = async function(context, next, conversationData){
 
-  const monday = mondaySdk();
-
-  monday.setToken('eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjg5NjYwNDgyLCJ1aWQiOjE2NjY1NzIxLCJpYWQiOiIyMDIwLTExLTAxVDEzOjQzOjAyLjAwMFoiLCJwZXIiOiJtZTp3cml0ZSIsImFjdGlkIjo3MzM2MzM3LCJyZ24iOiJ1c2UxIn0.Snko3tzbKJyYoTPMAwK2mo0zzcgCl0xEXAjJEGcPB6Y');
   var result = await monday.api('query { boards { id name } }');
   if(conversationData.intent == "agent.boards.list"){
     var selectedBoard = context.activity.text;
     var matchBoard = result.data.boards.find(function(board){
-      return board.id == selectedBoard;
+      return board.id == selectedBoard || board.name.toLowerCase() == selectedBoard.toLowerCase();
     })
     if(matchBoard == null){
       await context.sendActivity(MessageFactory.text("Could not find matching board", "Could not find matching board"));
@@ -29,14 +27,16 @@ module.exports = async function(context, next, conversationData){
   console.log(JSON.stringify(result));
   var boards = result.data.boards;
   var actions = []
+  var boardList = "";
   boards.forEach(function(board){
+    boardList += `${board.name}\r\n`
     actions.push({
       type: ActionTypes.PostBack,
       title: board.name,
       value: board.id
     })
   })
-  var reply = MessageFactory.suggestedActions(actions, 'Which board do you want to work with?');
+  var reply = MessageFactory.suggestedActions(actions, `Which board do you want to work with?${boardList}`);
   await context.sendActivity(reply);
   conversationData.intent = "agent.boards.list";
   //await context.sendActivity(MessageFactory.text(text, text));

@@ -1,5 +1,5 @@
 const { MessageFactory } = require('botbuilder');
-const mondaySdk = require("monday-sdk-js");
+const monday = require("../monday.js");
 const {
     AttachmentPrompt,
     ChoiceFactory,
@@ -24,32 +24,55 @@ const USER_PROFILE = 'USER_PROFILE';
 const WATERFALL_DIALOG = 'WATERFALL_DIALOG';
 
 class CreateItemDialog extends ComponentDialog {
-    constructor(userState, result) {
+    constructor(userState, result, boardId) {
         super('userProfileDialog');
+
+        this.result = result;
+        this.boardId = boardId;
 
         this.userProfile = userState.createProperty(USER_PROFILE);
 
         this.addDialog(new TextPrompt(NAME_PROMPT));
         this.addDialog(new ChoicePrompt(CHOICE_PROMPT));
         this.addDialog(new ConfirmPrompt(CONFIRM_PROMPT));
+
         var items = []
-        result.data.boards[0].columns.forEach((item, i) => {
+        var columns = result.data.boards[0].columns;
+
+        columns.forEach((item, i) => {
           items.push(async function (step) {
-              if(step.result != null && step.result.value != null){
-                step.values.transport = step.result.value;
+              if(i > 0){
+                var previousItem = columns[i-1]
+
+                console.log("VALUE", previousItem, previousItem.name, step.result)
+                if(step.result != null){
+                  if(step.result.value != null){
+                    step.values[previousItem.id] = step.result.value;
+                  }else{
+                    step.values[previousItem.id] = step.result;
+                  }
+                }
               }
 
+              var currentItem = columns[i];
+              var type = currentItem.type;
+              switch(type){
+                case "color":
+                return await step.prompt(CHOICE_PROMPT, {
+                    prompt: item.title,
+                    choices: ChoiceFactory.toChoices(['Car2', 'Bus', 'Bicycle'])
+                });
+                break;
+                default:
+                return await step.prompt(NAME_PROMPT,item.title);
+                break;
+              }
               // WaterfallStep always finishes with the end of the Waterfall or with another dialog; here it is a Prompt Dialog.
               // Running a prompt here means the next WaterfallStep will be run when the user's response is received.
-              return await step.prompt(CHOICE_PROMPT, {
-                  prompt: item.title,
-                  choices: ChoiceFactory.toChoices(['Car2', 'Bus', 'Bicycle'])
-              });
+
           }.bind(this))
         });
-        items.push(
-          this.summaryStep.bind(this)
-        );
+        items.push(this.summaryStep.bind(this));
 
 
         this.addDialog(new WaterfallDialog(WATERFALL_DIALOG, items));
@@ -151,7 +174,33 @@ class CreateItemDialog extends ComponentDialog {
     }
 
     async summaryStep(step) {
-        if (step.result) {
+        var columns = this.result.data.boards[0].columns;
+        var previousItem = columns[columns.length-1]
+        if(step.result != null){
+          if(step.result.value != null){
+            step.values[previousItem.id] = step.result.value;
+          }else{
+            step.values[previousItem.id] = step.result;
+          }
+        }
+        const monday = mondaySdk();
+        var boardId = this.boardId;
+        var itemName = step.values["name"]
+        var objects = {};
+        columns.forEach((item, i) => {
+          if(item.id != "name" && step.values[item.id] != null){
+            objects[item.id] = step.values[item.id]
+          }
+        });
+        var stringItem = JSON.stringify(objects);
+        stringItem = JSON.stringify(String(stringItem));
+        stringItem = stringItem.substring(1, stringItem.length-1);
+        monday.setToken('eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjg5NjYwNDgyLCJ1aWQiOjE2NjY1NzIxLCJpYWQiOiIyMDIwLTExLTAxVDEzOjQzOjAyLjAwMFoiLCJwZXIiOiJtZTp3cml0ZSIsImFjdGlkIjo3MzM2MzM3LCJyZ24iOiJ1c2UxIn0.Snko3tzbKJyYoTPMAwK2mo0zzcgCl0xEXAjJEGcPB6Y');
+        var createMethod = `mutation { create_item (board_id: ${this.boardId}, item_name:"${itemName}" column_values:"${stringItem}") {id}}`;
+        var result = await monday.api(createMethod);
+        console.log("Got Result", result);
+        await step.context.sendActivity('Thanks. I have just created it for you');
+        /*if (step.result) {
           console.log("VALUES",step.values);
             // Get the current profile object from user state.
             const userProfile = await this.userProfile.get(step.context, new UserProfile());
@@ -177,7 +226,7 @@ class CreateItemDialog extends ComponentDialog {
             }
         } else {
             await step.context.sendActivity('Thanks. Your profile will not be kept.');
-        }
+        }*/
 
         // WaterfallStep always finishes with the end of the Waterfall or with another dialog; here it is the end.
         return await step.endDialog();
@@ -213,14 +262,10 @@ class CreateItemDialog extends ComponentDialog {
 }
 
 module.exports = async function(context, next, conversationData, conversationState, userState, dialogState){
-
-  const monday = mondaySdk();
-  var boardId = "884665049"//conversationData.board.id;
-  monday.setToken('eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjg5NjYwNDgyLCJ1aWQiOjE2NjY1NzIxLCJpYWQiOiIyMDIwLTExLTAxVDEzOjQzOjAyLjAwMFoiLCJwZXIiOiJtZTp3cml0ZSIsImFjdGlkIjo3MzM2MzM3LCJyZ24iOiJ1c2UxIn0.Snko3tzbKJyYoTPMAwK2mo0zzcgCl0xEXAjJEGcPB6Y');
-  var result = await monday.api(`query {  boards (ids: ${boardId}) {owner {id} columns { title, type, settings_str} } }`);
-  console.log(JSON.stringify(result));
-  var createItem = new CreateItemDialog(userState, result)
-  createItem.run(context, dialogState)
+  var boardId = conversationData.board.id;
+  var result = await monday.api(`query {  boards (ids: ${boardId}) {owner {id} columns { id, title, type, settings_str} } }`);
+  var createItem = new CreateItemDialog(userState, result, boardId)
+  await createItem.run(context, dialogState)
   conversationData.intent = "agent.create"
   //await context.sendActivity(MessageFactory.text("Reply", "number 2"));
   // By calling next() you ensure that the next BotHandler is run.
