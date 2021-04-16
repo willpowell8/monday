@@ -33,7 +33,6 @@ jobs:
       with:
         name: node-app
         path: output.tar
-tar -xzvf output.tar.gz -C .
   deploy:
     runs-on: windows-latest
     needs: build
