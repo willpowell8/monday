@@ -5,7 +5,7 @@ const { ActionTypes } = require('botframework-schema');
 
 module.exports = async function(context, next, conversationData){
 
-  var result = await monday.api('query { boards { id name } }');
+  var result = await monday.api('query { boards { id name board_kind owner { name account { slug} } } }');
   var selectedBoard = context.activity.text;
 
   var matchBoard = result.data.boards.find(function(board){

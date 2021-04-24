@@ -32,51 +32,60 @@ class EchoBot extends ActivityHandler {
             const conversationData = await this.conversationDataAccessor.get(context, { promptedForUserName: false });
             const replyText = `OK: ${ context.activity.text }`;
             var intent;
+            var response;
             if(conversationData.intent != null){
               intent = conversationData.intent;
             }else{
-              const response = await global.nlp.process('en', context.activity.text);
+              response = await global.nlp.process('en', context.activity.text);
               intent = response.intent;
             }
-            switch(intent){
-              case "agent.create":
-                this.dialogState = conversationState.createProperty('CreateDialogState');
-                await require('./intents/create')(context, next, conversationData, conversationState, userState, this.dialogState);
-              break;
-              case "agent.boards.list":
-                await require('./intents/boards-list')(context, next, conversationData);
-              break
-              case "agent.boards.current":
-                await require('./intents/board-current')(context, next, conversationData);
-              break;
-              case "agent.assigned.to.me":
+            if(intent.indexOf("response.") > -1 && response != null){
+              await context.sendActivity(MessageFactory.text(response.answer, response.answer));
+            }else{
+              switch(intent){
+                case "agent.create":
+                  this.dialogState = conversationState.createProperty('CreateDialogState');
+                  await require('./intents/create')(context, next, conversationData, conversationState, userState, this.dialogState);
+                break;
+                case "agent.boards.list":
+                  await require('./intents/boards-list')(context, next, conversationData);
+                break
+                case "agent.boards.current":
+                  await require('./intents/board-current')(context, next, conversationData);
+                break;
+                case "agent.link":
+                  await require('./intents/link')(context, next, conversationData);
+                break;
+                case "agent.assigned.to.me":
 
-              break
-              case "agent.update.item":
+                break
+                case "agent.update.item":
 
-              break;
-              case "agent.update":
+                break;
+                case "agent.update":
 
-              break;
-              case "agent.add":
+                break;
+                case "agent.add":
 
-              break;
-              case "agent.assign.to.me":
+                break;
+                case "agent.assign.to.me":
 
-              break;
-              case "agent.addcomment":
+                break;
+                case "agent.addcomment":
 
-              break;
-              case "agent.addthatcomment":
+                break;
+                case "agent.addthatcomment":
 
-              break;
-              default:
-                /*if(conversationData.board != null){
-                  await context.sendActivity(MessageFactory.text(conversationData.board.name, conversationData.board.name));
-                }
-                this.dialogState = conversationState.createProperty('DialogState');
-                await global.dialog.run(context, this.dialogState);*/
+                break;
+                default:
+                  /*if(conversationData.board != null){
+                    await context.sendActivity(MessageFactory.text(conversationData.board.name, conversationData.board.name));
+                  }
+                  this.dialogState = conversationState.createProperty('DialogState');
+                  await global.dialog.run(context, this.dialogState);*/
+              }
             }
+
             console.log("Executing next");
             next();
 

@@ -3,6 +3,42 @@
   "locale": "en-US",
   "data": [
     {
+      "intent": "response.hello",
+      "utterances": [
+        "hello",
+        "hi",
+        "hey",
+        "hiya"
+      ],
+      "answers": [
+        "Hello I am monday chat. Nice to meet you.",
+        "Hi this is Monday chat. I hope you are having a good day",
+        "Can I help you with your monday boards"
+      ]
+    },
+    {
+      "intent": "response.what",
+      "utterances": [
+        "what can you help me with?",
+        "how can you help?",
+        "What can you do?"
+      ],
+      "answers": [
+        "I am connected to your monday account and I can interface with your monday boards. Creating, updating, reading and reporting on your items."
+      ]
+    },
+    {
+      "intent": "response.services",
+      "utterances": [
+        "what services do you support",
+        "how can I talk to you",
+        "what channels are you available on."
+      ],
+      "answers": [
+        "I can talk to you on any chat service including: Skype, Alexa, Teams, Slack, Skype for Business, Kik, Line, Telegram, GroupMe, Facebook, Google Hangout etc. I can work either in a 1 to 1 chat or group chats."
+      ]
+    },
+    {
       "intent": "agent.create",
       "utterances": [
         "create a new ticket",
@@ -25,6 +61,17 @@
         "Switch board",
         "Switch to board",
         "Open board"
+      ],
+      "answers": [
+        "You have boards"
+      ]
+    },
+    {
+      "intent": "agent.link",
+      "utterances": [
+        "link",
+        "url",
+        "link to board"
       ],
       "answers": [
         "You have boards"
