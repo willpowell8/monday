@@ -24,9 +24,11 @@ const USER_PROFILE = 'USER_PROFILE';
 const WATERFALL_DIALOG = 'WATERFALL_DIALOG';
 
 class CreateItemDialog extends ComponentDialog {
-    constructor(userState, result, boardId) {
+    constructor(userState, result, boardId, board, users) {
         super('userProfileDialog');
 
+        this.users = users;
+        this.board = board;
         this.result = result;
         this.boardId = boardId;
 
@@ -47,9 +49,33 @@ class CreateItemDialog extends ComponentDialog {
                 console.log("VALUE", previousItem, previousItem.name, step.result)
                 if(step.result != null){
                   if(step.result.value != null){
-                    step.values[previousItem.id] = step.result.value;
+                    if(previousItem.type == "multiple-person"){
+                      console.log("Handling Multiple person")
+                      var user;
+                      this.users.forEach((item, i) => {
+                        if(item.name == step.result.value){
+                          user = item;
+                        }
+                      });
+                      step.values[previousItem.id] = `${user.id}`;
+                    }else{
+                      step.values[previousItem.id] = step.result.value;
+                    }
+
                   }else{
-                    step.values[previousItem.id] = step.result;
+                    if(previousItem.type == "multiple-person"){
+                      console.log("Handling Multiple person")
+                      var user;
+                      this.users.forEach((item, i) => {
+                        if(item.name == step.result){
+                          user = item;
+                        }
+                      });
+                      step.values[previousItem.id] = `${user.id}`;
+                    }else{
+                      step.values[previousItem.id] = step.result;
+                    }
+
                   }
                 }
               }
@@ -57,10 +83,34 @@ class CreateItemDialog extends ComponentDialog {
               var currentItem = columns[i];
               var type = currentItem.type;
               switch(type){
-                case "color":
+                case "multiple-person":
+                var values = [];
+                this.users.forEach((item, i) => {
+                  values.push(item.name)
+                });
+
                 return await step.prompt(CHOICE_PROMPT, {
                     prompt: item.title,
-                    choices: ChoiceFactory.toChoices(['Car2', 'Bus', 'Bicycle'])
+                    choices: ChoiceFactory.toChoices(values)
+                });
+                break;
+                case "color":
+                console.log(currentItem);
+                var jsonStringSettings = currentItem.settings_str;
+                var settings = JSON.parse(jsonStringSettings);
+                var labels = settings["labels"];
+                var values = [];
+
+                Object.keys(settings["labels"]).forEach((item, i) => {
+                  var value = labels[item];
+                  if(value.length > 0){
+                    values.push(value);
+                  }
+                });
+
+                return await step.prompt(CHOICE_PROMPT, {
+                    prompt: item.title,
+                    choices: ChoiceFactory.toChoices(values)
                 });
                 break;
                 default:
@@ -178,7 +228,18 @@ class CreateItemDialog extends ComponentDialog {
         var previousItem = columns[columns.length-1]
         if(step.result != null){
           if(step.result.value != null){
-            step.values[previousItem.id] = step.result.value;
+            if(previousItem.type == "multiple-person"){
+              console.log("Handling Multiple person")
+              var user;
+              this.users.forEach((item, i) => {
+                if(item.name == step.result.value){
+                  user = item;
+                }
+              });
+              step.values[previousItem.id] = `${user.id}`;
+            }else{
+              step.values[previousItem.id] = step.result.value;
+            }
           }else{
             step.values[previousItem.id] = step.result;
           }
@@ -194,10 +255,19 @@ class CreateItemDialog extends ComponentDialog {
         var stringItem = JSON.stringify(objects);
         stringItem = JSON.stringify(String(stringItem));
         stringItem = stringItem.substring(1, stringItem.length-1);
+        console.log("STRING PAYLOAD", stringItem)
         var createMethod = `mutation { create_item (board_id: ${this.boardId}, item_name:"${itemName}" column_values:"${stringItem}") {id}}`;
         var result = await monday.api(createMethod);
         console.log("Got Result", result);
-        await step.context.sendActivity('Thanks. I have just created it for you');
+        if(result.data != null && result.data.create_item != null && result.data.create_item.id != null){
+          var itemId = result.data.create_item.id
+          var slug = this.board.owner.account.slug;
+          var boardLink = `https://${slug}.monday.com/boards/${this.boardId}/pulses/${itemId}`
+          await step.context.sendActivity(`Thanks. I have just created it for you. Quick access it ${boardLink}`);
+        }else{
+          await step.context.sendActivity(`Opps it appears an error occurred`);
+        }
+
         /*if (step.result) {
           console.log("VALUES",step.values);
             // Get the current profile object from user state.
@@ -260,14 +330,43 @@ class CreateItemDialog extends ComponentDialog {
 }
 
 module.exports = async function(context, next, conversationData, conversationState, userState, dialogState){
-  if(conversationData.board == null){
+
+  var boardMarkers = ["on board", "for board", "to board"]
+
+  var board = conversationData.creatingBoard;
+  if(board == null){
+    board = conversationData.board;
+  }
+
+  for(var i = 0; i< boardMarkers.length; i++){
+    var marker = boardMarkers[i];
+    var selectedBoard = context.activity.text;
+    if(selectedBoard.indexOf(marker) > -1){
+      var result = await monday.api('query { boards { id name board_kind owner { id name account { slug } } } }');
+      var matchBoard = result.data.boards.find(function(board){
+        return selectedBoard.toLowerCase().indexOf(board.name.toLowerCase())> -1;
+      })
+      if(matchBoard == null){
+        await context.sendActivity(MessageFactory.text("Could not find that board to work with", "Could not find that board to work with"));
+        return;
+      }else{
+        board = matchBoard;
+        conversationData.creatingBoard = board;
+      }
+    }
+  }
+
+
+
+  if(board == null){
     await context.sendActivity(MessageFactory.text("You need to tell me what board you want to work on", "You need to tell me what board you want to work on"));
     await require('./boards-list')(context, next, conversationData);
     return;
   }
-  var boardId = conversationData.board.id;
+  var boardId = board.id;
   var result = await monday.api(`query {  boards (ids: ${boardId}) {owner {id} columns { id, title, type, settings_str} } }`);
-  var createItem = new CreateItemDialog(userState, result, boardId)
+  var users = await monday.api(`query{users{id name}}`)
+  var createItem = new CreateItemDialog(userState, result, boardId, board, users.data.users)
   await createItem.run(context, dialogState)
   conversationData.intent = "agent.create"
   //await context.sendActivity(MessageFactory.text("Reply", "number 2"));

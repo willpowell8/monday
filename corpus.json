@@ -93,6 +93,7 @@
     {
       "intent": "agent.assigned.to.me",
       "utterances": [
+        "assigned to me",
         "how many tickets are assigned to me?"
       ],
       "answers": [
