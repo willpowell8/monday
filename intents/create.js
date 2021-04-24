@@ -24,13 +24,14 @@ const USER_PROFILE = 'USER_PROFILE';
 const WATERFALL_DIALOG = 'WATERFALL_DIALOG';
 
 class CreateItemDialog extends ComponentDialog {
-    constructor(userState, result, boardId, board, users) {
+    constructor(userState, result, boardId, board, users, conversationData) {
         super('userProfileDialog');
-
+        this.conversationData = conversationData;
         this.users = users;
         this.board = board;
         this.result = result;
         this.boardId = boardId;
+        conversationData.isCreating = true;
 
         this.userProfile = userState.createProperty(USER_PROFILE);
 
@@ -244,6 +245,7 @@ class CreateItemDialog extends ComponentDialog {
             step.values[previousItem.id] = step.result;
           }
         }
+        this.conversationData.isCreating = null;
         var boardId = this.boardId;
         var itemName = step.values["name"]
         var objects = {};
@@ -331,30 +333,34 @@ class CreateItemDialog extends ComponentDialog {
 
 module.exports = async function(context, next, conversationData, conversationState, userState, dialogState){
 
-  var boardMarkers = ["on board", "for board", "to board"]
+  var boardMarkers = ["on board", "for board", "to board", "on"]
 
   var board = conversationData.creatingBoard;
   if(board == null){
     board = conversationData.board;
   }
+  var isCreating = conversationData.isCreating != null ? true : false;
 
-  for(var i = 0; i< boardMarkers.length; i++){
-    var marker = boardMarkers[i];
-    var selectedBoard = context.activity.text;
-    if(selectedBoard.indexOf(marker) > -1){
-      var result = await monday.api('query { boards { id name board_kind owner { id name account { slug } } } }');
-      var matchBoard = result.data.boards.find(function(board){
-        return selectedBoard.toLowerCase().indexOf(board.name.toLowerCase())> -1;
-      })
-      if(matchBoard == null){
-        await context.sendActivity(MessageFactory.text("Could not find that board to work with", "Could not find that board to work with"));
-        return;
-      }else{
-        board = matchBoard;
-        conversationData.creatingBoard = board;
+  if(!isCreating){
+    for(var i = 0; i< boardMarkers.length; i++){
+      var marker = boardMarkers[i];
+      var selectedBoard = context.activity.text;
+      if(selectedBoard.indexOf(marker) > -1){
+        var result = await monday.api('query { boards { id name board_kind owner { id name account { slug } } } }');
+        var matchBoard = result.data.boards.find(function(board){
+          return selectedBoard.toLowerCase().indexOf(board.name.toLowerCase())> -1;
+        })
+        if(matchBoard == null){
+          await context.sendActivity(MessageFactory.text("Could not find that board to work with", "Could not find that board to work with"));
+          return;
+        }else{
+          board = matchBoard;
+          conversationData.creatingBoard = board;
+        }
       }
     }
   }
+
 
 
 
@@ -364,9 +370,36 @@ module.exports = async function(context, next, conversationData, conversationSta
     return;
   }
   var boardId = board.id;
+  if(!isCreating){
+    var calledMarkers = ["called", "with title", "titled", "named"]
+    var activityIntent = context.activity.text;
+    for(var i = 0; i< calledMarkers.length; i++){
+      var marker = calledMarkers[i];
+      if(activityIntent.indexOf(calledMarkers[i])>-1){
+        var calledParts = activityIntent.split(marker);
+        var lastPart = calledParts[calledParts.length - 1];
+        var createMethod = `mutation { create_item (board_id: ${boardId}, item_name:"${lastPart}") {id}}`;
+        var result = await monday.api(createMethod);
+        console.log("Quick create", result);
+        if(result.data != null && result.data.create_item != null && result.data.create_item.id != null){
+          var itemId = result.data.create_item.id
+          var slug = board.owner.account.slug;
+          var boardLink = `https://${slug}.monday.com/boards/${this.boardId}/pulses/${itemId}`
+          await context.sendActivity(`Thanks. I have just created it for you. Quick access it ${boardLink}`);
+        }else{
+          await context.sendActivity(`Opps it appears an error occurred`);
+        }
+        return;
+      }
+    }
+  }
+
+
+
+
   var result = await monday.api(`query {  boards (ids: ${boardId}) {owner {id} columns { id, title, type, settings_str} } }`);
   var users = await monday.api(`query{users{id name}}`)
-  var createItem = new CreateItemDialog(userState, result, boardId, board, users.data.users)
+  var createItem = new CreateItemDialog(userState, result, boardId, board, users.data.users, conversationData)
   await createItem.run(context, dialogState)
   conversationData.intent = "agent.create"
   //await context.sendActivity(MessageFactory.text("Reply", "number 2"));

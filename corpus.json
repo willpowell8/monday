@@ -43,6 +43,9 @@
       "utterances": [
         "create a new ticket",
         "create item",
+        "create an item",
+        "create an item on board",
+        "create an item on board called",
         "create row",
         "add a new line",
         "create new line",
