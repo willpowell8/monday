@@ -62,6 +62,9 @@ class EchoBot extends ActivityHandler {
                 case "agent.assigned.to.team":
                   await require('./intents/assigned_by_person')(context, next, conversationData);
                 break;
+                case "agent.assigned.to.team.by.status":
+                  await require('./intents/assigned_by_status')(context, next, conversationData);
+                break;
                 case "agent.update":
 
                 break;

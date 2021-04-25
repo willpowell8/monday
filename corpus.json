@@ -114,6 +114,15 @@
       ]
     },
     {
+      "intent": "agent.assigned.to.team.by.status",
+      "utterances": [
+        "what is the breakdown of items per team member"
+      ],
+      "answers": [
+        "You have X tickets assigned"
+      ]
+    },
+    {
       "intent": "agent.update",
       "utterances": [
         "Modify item"
