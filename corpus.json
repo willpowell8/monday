@@ -105,6 +105,15 @@
       ]
     },
     {
+      "intent": "agent.assigned.to.team",
+      "utterances": [
+        "how many tickets do my team mates have"
+      ],
+      "answers": [
+        "You have X tickets assigned"
+      ]
+    },
+    {
       "intent": "agent.update",
       "utterances": [
         "Modify item"

@@ -24,43 +24,7 @@ async function getInlineAttachment(statusCount,peopleColumn, statusColumn) {
   const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height, chartCallback });
 
 
-  /*const configuration = {
-        type: 'bar',
-        data: {
-            labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-            datasets: [{
-                label: '# of Votes',
-                data: [12, 19, 3, 5, 2, 3],
-                backgroundColor: [
-                    'rgba(255, 99, 132, 0.2)',
-                    'rgba(54, 162, 235, 0.2)',
-                    'rgba(255, 206, 86, 0.2)',
-                    'rgba(75, 192, 192, 0.2)',
-                    'rgba(153, 102, 255, 0.2)',
-                    'rgba(255, 159, 64, 0.2)'
-                ],
-                borderColor: [
-                    'rgba(255,99,132,1)',
-                    'rgba(54, 162, 235, 1)',
-                    'rgba(255, 206, 86, 1)',
-                    'rgba(75, 192, 192, 1)',
-                    'rgba(153, 102, 255, 1)',
-                    'rgba(255, 159, 64, 1)'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                yAxes: [{
-                    ticks: {
-                        beginAtZero: true,
-                        callback: (value) => '$' + value
-                    }
-                }]
-            }
-        }
-    };*/
+
     var data = [];
     var labels = [];
     Object.keys(statusCount).forEach((key, i) => {
@@ -68,44 +32,51 @@ async function getInlineAttachment(statusCount,peopleColumn, statusColumn) {
       data.push(statusCount[key])
     });
 
-    var colors = [];
-    var borderColors = [];
-    var statusSettings = JSON.parse(statusColumn.settings_str);
-    var statusLabels = statusSettings.labels;
-    var statusLabelColors = statusSettings.labels_colors
-    labels.forEach((label, i) => {
-      var id;
-      Object.keys(statusLabels).forEach((statusLabelsVal, i) => {
-        if(statusLabels[statusLabelsVal] == label){
-          id = statusLabelsVal;
-        }
-      });
-      var color = statusLabelColors[id].color;
-      var borderColor = statusLabelColors[id].border;
-      colors.push(color);
-      borderColors.push(borderColor);
-    });
 
+    const configuration = {
+          type: 'bar',
+          data: {
+              labels: labels,
+              datasets: [{
+                  label: 'assigned items',
+                  data: data,
+                  backgroundColor: [
+                      'rgba(255, 99, 132, 0.2)',
+                      'rgba(54, 162, 235, 0.2)',
+                      'rgba(255, 206, 86, 0.2)',
+                      'rgba(75, 192, 192, 0.2)',
+                      'rgba(153, 102, 255, 0.2)',
+                      'rgba(255, 159, 64, 0.2)'
+                  ],
+                  borderColor: [
+                      'rgba(255,99,132,1)',
+                      'rgba(54, 162, 235, 1)',
+                      'rgba(255, 206, 86, 1)',
+                      'rgba(75, 192, 192, 1)',
+                      'rgba(153, 102, 255, 1)',
+                      'rgba(255, 159, 64, 1)'
+                  ],
+                  borderWidth: 1
+              }]
+          },
+          options: {
+              scales: {
+                  yAxes: [{
+                      ticks: {
+                          beginAtZero: true,
 
-  const configuration = {
-    type: 'pie',
-    data:{
-        datasets: [{
-            data: data,
-            backgroundColor: colors,
-            borderColor:borderColors
-        }],
-
-        // These labels appear in the legend and in the tooltips when hovering different arcs
-        labels: labels
-    },
-    options:{
-      title: {
-        display: true,
-        text: 'Assigned to me'
-      }
-    }
-  }
+                      }
+                  }]
+              },
+              title: {
+                display: true,
+                text: 'Tickets by team mate'
+              },
+              legend: {
+                display: false
+              }
+          }
+      };
   const image = await chartJSNodeCanvas.renderToBuffer(configuration);
   // const imageData = fs.readFileSync(path.join(__dirname, '../resources/monday.png'));
   // const base64Image = Buffer.from(imageData).toString('base64');
@@ -136,12 +107,9 @@ module.exports = async function(context, next, conversationData){
   }
 
   var columns = result.data.boards[0].columns;
-  var statusColumn;
   var peopleColumn;
   columns.forEach((column, i) => {
-    if(column.type == "color"){
-      statusColumn = column;
-    }else if(column.type == "multiple-person"){
+    if(column.type == "multiple-person"){
       peopleColumn = column;
     }
   });
@@ -153,11 +121,6 @@ module.exports = async function(context, next, conversationData){
     return
   }
 
-  if(statusColumn == null){
-    var reply2 = MessageFactory.text(`Could not find the status column`);
-    await context.sendActivity(reply2);
-    return
-  }
   var statusCount = {}
   items.forEach((item, i) => {
     var itemCols = {};
@@ -166,27 +129,28 @@ module.exports = async function(context, next, conversationData){
     });
 
     var peopleValue = itemCols[peopleColumn.id];
-    var statusValue = itemCols[statusColumn.id];
-    if(peopleValue.text == meName){
-      if(statusCount[statusValue.text] == null){
-        statusCount[statusValue.text] = 1;
-      }else{
-        statusCount[statusValue.text] += 1;
-      }
+    var user = peopleValue.text;
+    if(user == null || user.length == 0){
+      user = "Not Set"
+    }
+    if(statusCount[user] == null){
+      statusCount[user] = 1;
+    }else{
+      statusCount[user] += 1;
     }
   });
 
   var messageString = []
   Object.keys(statusCount).forEach((key, i) => {
     var count = statusCount[key]
-    messageString.push(`${count} in ${key}`)
+    messageString.push(`${key} has ${count}`)
   });
   var output = messageString.join(",")
 
 
   const reply = { type: ActivityTypes.Message };
-  reply.text = `You have tickets ${output}`;
-  var graph = await getInlineAttachment(statusCount,peopleColumn, statusColumn);
+  reply.text = `The tickets are distributed as follows: ${output}`;
+  var graph = await getInlineAttachment(statusCount,peopleColumn);
   reply.attachments = [graph];
   await context.sendActivity(reply);
 }
