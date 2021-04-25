@@ -96,19 +96,9 @@
     {
       "intent": "agent.assigned.to.me",
       "utterances": [
+        "show me the tickets assigned to me",
         "assigned to me",
         "how many tickets are assigned to me?"
-      ],
-      "answers": [
-        "You have X tickets assigned"
-      ]
-    },
-
-    {
-      "intent": "agent.update.item",
-      "utterances": [
-        "Update item",
-        "Modify item"
       ],
       "answers": [
         "You have X tickets assigned"

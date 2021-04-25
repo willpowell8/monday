@@ -263,6 +263,7 @@ class CreateItemDialog extends ComponentDialog {
         console.log("Got Result", result);
         if(result.data != null && result.data.create_item != null && result.data.create_item.id != null){
           var itemId = result.data.create_item.id
+          conversationData.itemId = itemId;
           var slug = this.board.owner.account.slug;
           var boardLink = `https://${slug}.monday.com/boards/${this.boardId}/pulses/${itemId}`
           await step.context.sendActivity(`Thanks. I have just created it for you. Quick access it ${boardLink}`);
@@ -383,6 +384,7 @@ module.exports = async function(context, next, conversationData, conversationSta
         console.log("Quick create", result);
         if(result.data != null && result.data.create_item != null && result.data.create_item.id != null){
           var itemId = result.data.create_item.id
+          conversationData.itemId = itemId;
           var slug = board.owner.account.slug;
           var boardLink = `https://${slug}.monday.com/boards/${this.boardId}/pulses/${itemId}`
           await context.sendActivity(`Thanks. I have just created it for you. Quick access it ${boardLink}`);
