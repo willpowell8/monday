@@ -90,8 +90,10 @@ class CreateItemDialog extends ComponentDialog {
                   values.push(item.name)
                 });
 
+                var prompt = `Who would you like to '${item.title}'`
+
                 return await step.prompt(CHOICE_PROMPT, {
-                    prompt: item.title,
+                    prompt: prompt,
                     choices: ChoiceFactory.toChoices(values)
                 });
                 break;
@@ -108,14 +110,15 @@ class CreateItemDialog extends ComponentDialog {
                     values.push(value);
                   }
                 });
-
+                var prompt = `What would you like to set '${item.title}'?`
                 return await step.prompt(CHOICE_PROMPT, {
-                    prompt: item.title,
+                    prompt: prompt,
                     choices: ChoiceFactory.toChoices(values)
                 });
                 break;
                 default:
-                return await step.prompt(NAME_PROMPT,item.title);
+                var prompt2 = `what should I set for '${item.title}'?`
+                return await step.prompt(NAME_PROMPT,prompt2);
                 break;
               }
               // WaterfallStep always finishes with the end of the Waterfall or with another dialog; here it is a Prompt Dialog.
@@ -356,7 +359,7 @@ module.exports = async function(context, next, conversationData, conversationSta
           return;
         }else{
           board = matchBoard;
-          conversationData.creatingBoard = board;
+          this.conversationData.creatingBoard = board;
         }
       }
     }
