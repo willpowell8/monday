@@ -390,7 +390,7 @@ module.exports = async function(context, next, conversationData, conversationSta
           conversationData.itemId = itemId;
           var slug = board.owner.account.slug;
           var boardLink = `https://${slug}.monday.com/boards/${this.boardId}/pulses/${itemId}`
-          await context.sendActivity(`Thanks. I have just created it for you. Quick access it ${boardLink}`);
+          await context.sendActivity(`Thanks. I have just created it for you.`);
         }else{
           await context.sendActivity(`Opps it appears an error occurred`);
         }
